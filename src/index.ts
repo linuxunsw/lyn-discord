@@ -8,7 +8,7 @@ import { checkAnnounce } from "./commands/announce/schedule";
 
 const ONE_MIN = 60000;
 
-const client = new BotClient({ intents: [GatewayIntentBits.Guilds] });
+export const client = new BotClient({ intents: [GatewayIntentBits.Guilds] });
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 (async () => {
