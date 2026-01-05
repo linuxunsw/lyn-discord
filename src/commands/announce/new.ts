@@ -1,3 +1,4 @@
+import { parseDate } from "chrono-node";
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -5,6 +6,7 @@ import {
   ButtonStyle,
   ChannelType,
   ChatInputCommandInteraction,
+  codeBlock,
   ComponentType,
   Embed,
   EmbedBuilder,
@@ -17,7 +19,10 @@ import {
   TextChannel,
   TextInputBuilder,
   TextInputStyle,
+  time,
 } from "discord.js";
+import { scheduledAnnounces } from "../../db/schema";
+import { db } from "../../db/db";
 
 export async function newAnnounce(interaction: ChatInputCommandInteraction) {
   /* channel provided cannot be a DM channel, voice channel, etc., check for safety */
@@ -89,14 +94,15 @@ export async function newAnnounce(interaction: ChatInputCommandInteraction) {
       channel as TextChannel | NewsChannel,
       previewMsg.embeds[0],
     );
-  } catch {
+  } catch (err) {
     await interaction.followUp({
-      content: "Something went wrong.",
+      content: `Something went wrong, see ${codeBlock(err as string)}`,
       flags: MessageFlags.Ephemeral,
     });
   }
 }
 
+/* builds the announcement modal to prompt for information */
 function buildAnnounceModal(): ModalBuilder {
   const modal = new ModalBuilder()
     .setCustomId(`announce_create_modal`)
@@ -150,12 +156,16 @@ async function handleAnnouncementModalSubmit(
 
   if (file) previewEmbed.setImage(file.url);
 
-  /* confirm/cancel buttons */
+  /* confirm/schedule/cancel buttons */
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId("announce_confirm")
       .setLabel("Confirm")
       .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId("announce_schedule")
+      .setLabel("Schedule")
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId("announce_cancel")
       .setLabel("Cancel")
@@ -190,5 +200,110 @@ async function handleAnnouncementButton(
       embeds: [],
       components: [],
     });
+  } else if (interaction.customId === "announce_schedule") {
+    await scheduleAnnounce(channel, embed, interaction);
   }
+}
+
+/**
+ * handles scheduling announcements
+ * - prompts for time (can use natural language)
+ * - adds announcement to db to be sent at time
+ */
+async function scheduleAnnounce(
+  channel: TextChannel | NewsChannel,
+  embed: Embed,
+  interaction: ButtonInteraction,
+) {
+  const modal = buildTimestampModal();
+  await interaction.showModal(modal);
+
+  /* get timestamp from modal submission */
+  const modalInteraction = await interaction
+    .awaitModalSubmit({
+      filter: (modalInteraction) =>
+        modalInteraction.user.id === interaction.user.id,
+      time: 60000,
+    })
+    .catch(() => null);
+
+  if (!modalInteraction) {
+    await interaction.followUp({
+      content: "Timed out waiting for response, please try again.",
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  /* parse time */
+  const sendAtRaw = modalInteraction.fields.getTextInputValue(
+    "announce_schedule_time",
+  );
+  const sendAt = parseDate(sendAtRaw);
+  if (!sendAt) {
+    await modalInteraction.followUp({
+      content: `Could not parse input: ${sendAtRaw}, please try again.`,
+      embeds: [],
+      components: [],
+    });
+    return;
+  }
+
+  /* schedule & add to db */
+  const announce = await createScheduledAnnounce(
+    channel.guildId,
+    channel.id,
+    interaction.user.id,
+    embed,
+    Math.floor(sendAt.getTime() / 1000),
+  );
+
+  if (!announce[0]) throw new Error("Insert failed/no row returned");
+
+  await modalInteraction.reply({
+    content: `Scheduled new announce @ ${time(announce[0].sendAt)}, id: ${announce[0].id}`,
+    embeds: [],
+    components: [],
+    flags: MessageFlags.Ephemeral,
+  });
+}
+
+/* builds modal to prompt for time to send */
+function buildTimestampModal(): ModalBuilder {
+  const modal = new ModalBuilder()
+    .setCustomId(`announce_schedule_modal`)
+    .setTitle("Schedule Announcement");
+
+  const timeLabel = new LabelBuilder()
+    .setLabel("Time")
+    .setDescription("Time to send message.")
+    .setTextInputComponent(
+      new TextInputBuilder()
+        .setCustomId("announce_schedule_time")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true),
+    );
+
+  modal.addLabelComponents(timeLabel);
+  return modal;
+}
+
+/* adds new scheduled announcement to db */
+async function createScheduledAnnounce(
+  guildId: string,
+  channelId: string,
+  userId: string,
+  content: Embed,
+  sendAt: number,
+) {
+  const announce: typeof scheduledAnnounces.$inferInsert = {
+    guildId: guildId,
+    channelId: channelId,
+    userId: userId,
+    content: content,
+    sendAt: sendAt,
+    createdAt: Math.floor(Date.now() / 1000),
+  };
+
+  return await db.insert(scheduledAnnounces).values(announce).returning();
 }
