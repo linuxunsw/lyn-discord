@@ -5,6 +5,7 @@ import {
 } from "discord.js";
 import { Command } from "../../types/command";
 import { newAnnounce } from "./new";
+import { listAnnounce } from "./list";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,6 +13,7 @@ module.exports = {
     .setDescription("Sends a new announcement to the given channel.")
 
     /* create new announcement */
+    // TODO: add mention option
     .addSubcommand((sub) =>
       sub
         .setName("new")
@@ -69,6 +71,9 @@ module.exports = {
     switch (subcommand) {
       case "new":
         await newAnnounce(interaction);
+        return;
+      case "list":
+        await listAnnounce(interaction);
         return;
     }
   },
