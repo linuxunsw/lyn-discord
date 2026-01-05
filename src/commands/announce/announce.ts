@@ -6,6 +6,7 @@ import {
 import { Command } from "../../types/command";
 import { newAnnounce } from "./new";
 import { listAnnounce } from "./list";
+import { previewAnnounce } from "./preview";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -74,6 +75,9 @@ module.exports = {
         return;
       case "list":
         await listAnnounce(interaction);
+        return;
+      case "preview":
+        await previewAnnounce(interaction);
         return;
     }
   },
