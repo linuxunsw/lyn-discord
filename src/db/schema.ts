@@ -1,0 +1,14 @@
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { v4 as uuid } from "uuid";
+
+export const scheduledAnnounces = sqliteTable("scheduled_announces", {
+  id: text()
+    .primaryKey()
+    .$defaultFn(() => uuid()),
+  guildId: text().notNull(),
+  channelId: text().notNull(),
+  userId: text().notNull(),
+  content: text({ mode: "json" }).notNull(),
+  sendAt: integer().notNull(),
+  createdAt: integer().notNull(),
+});
