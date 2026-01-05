@@ -9,6 +9,7 @@ import { listAnnounce } from "./list";
 import { previewAnnounce } from "./preview";
 import { validate } from "uuid";
 import { editScheduledAnnounce, editSentAnnounce } from "./edit";
+import { cancelScheduledAnnounce } from "./cancel";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -93,15 +94,18 @@ module.exports = {
     }
 
     switch (subcommand) {
-      case "new":
+      case "new": {
         await newAnnounce(interaction);
         return;
-      case "list":
+      }
+      case "list": {
         await listAnnounce(interaction);
         return;
-      case "preview":
+      }
+      case "preview": {
         await previewAnnounce(interaction);
         return;
+      }
       case "edit": {
         const id = interaction.options.getString("id");
         const channel = interaction.options.getChannel("channel");
@@ -124,6 +128,10 @@ module.exports = {
             flags: MessageFlags.Ephemeral,
           });
         }
+        return;
+      }
+      case "cancel": {
+        await cancelScheduledAnnounce(interaction);
         return;
       }
     }
