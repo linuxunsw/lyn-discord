@@ -7,6 +7,8 @@ import { Command } from "../../types/command";
 import { newAnnounce } from "./new";
 import { listAnnounce } from "./list";
 import { previewAnnounce } from "./preview";
+import { validate } from "uuid";
+import { editScheduledAnnounce, editSentAnnounce } from "./edit";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -37,6 +39,13 @@ module.exports = {
             .setName("id")
             .setDescription("Id of the message to edit.")
             .setRequired(true),
+        )
+        .addChannelOption((opt) =>
+          opt
+            .setName("channel")
+            .setDescription(
+              "Channel where the message was sent (only required if editing a sent message).",
+            ),
         ),
     )
 
@@ -58,7 +67,21 @@ module.exports = {
             .setDescription("Id of the message to edit.")
             .setRequired(true),
         ),
+    )
+
+    /* cancel upcoming announcement */
+    .addSubcommand((sub) =>
+      sub
+        .setName("cancel")
+        .setDescription("Cancel an upcoming announcement.")
+        .addStringOption((opt) =>
+          opt
+            .setName("id")
+            .setDescription("Id of the message to cancel.")
+            .setRequired(true),
+        ),
     ),
+
   async execute(interaction: ChatInputCommandInteraction) {
     // TODO: permissions check
     const subcommand = interaction.options.getSubcommand();
@@ -79,6 +102,30 @@ module.exports = {
       case "preview":
         await previewAnnounce(interaction);
         return;
+      case "edit": {
+        const id = interaction.options.getString("id");
+        const channel = interaction.options.getChannel("channel");
+        if (!id) {
+          await interaction.reply({
+            content: "Please enter an id.",
+            flags: MessageFlags.Ephemeral,
+          });
+          return;
+        }
+
+        /* uuid -> scheduled */
+        if (validate(id)) {
+          await editScheduledAnnounce(interaction, id);
+        } else if (channel) {
+          await editSentAnnounce(interaction, channel.id, id);
+        } else {
+          await interaction.reply({
+            content: "Please provide a valid id (and channel).",
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+        return;
+      }
     }
   },
 } satisfies Command;

@@ -1,6 +1,7 @@
 import { parseDate } from "chrono-node";
 import {
   ActionRowBuilder,
+  Attachment,
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
@@ -11,6 +12,7 @@ import {
   Embed,
   EmbedBuilder,
   FileUploadBuilder,
+  inlineCode,
   LabelBuilder,
   MessageFlags,
   ModalBuilder,
@@ -139,6 +141,20 @@ function buildAnnounceModal(): ModalBuilder {
   return modal;
 }
 
+export function buildAnnounceEmbed(
+  title: string,
+  description: string,
+  file?: Attachment,
+): EmbedBuilder {
+  const announceEmbed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(description)
+    .setColor(0xfbc630);
+
+  if (file) announceEmbed.setImage(file.url);
+  return announceEmbed;
+}
+
 async function handleAnnouncementModalSubmit(
   interaction: ModalSubmitInteraction,
 ) {
@@ -148,13 +164,7 @@ async function handleAnnouncementModalSubmit(
   );
   const uploaded = interaction.fields.getUploadedFiles("announce_create_image");
   const file = uploaded?.first();
-
-  const previewEmbed = new EmbedBuilder()
-    .setTitle(title)
-    .setDescription(description)
-    .setColor(0xfbc630);
-
-  if (file) previewEmbed.setImage(file.url);
+  const previewEmbed = buildAnnounceEmbed(title, description, file);
 
   /* confirm/schedule/cancel buttons */
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -182,6 +192,7 @@ async function handleAnnouncementModalSubmit(
   return response.resource?.message;
 }
 
+/* handles the button interactions from announcement modals */
 async function handleAnnouncementButton(
   interaction: ButtonInteraction,
   channel: TextChannel | NewsChannel,
@@ -261,14 +272,14 @@ async function scheduleAnnounce(
   if (!announce[0]) throw new Error("Insert failed/no row returned");
 
   await modalInteraction.reply({
-    content: `Scheduled new announce @ ${time(announce[0].sendAt)}, id: ${announce[0].id}`,
+    content: `Scheduled new announce @ ${time(announce[0].sendAt)}, id: ${inlineCode(announce[0].id)}`,
     embeds: [],
     components: [],
     flags: MessageFlags.Ephemeral,
   });
 }
 
-/* builds modal to prompt for time to send */
+/* builds time prompt modal */
 function buildTimestampModal(): ModalBuilder {
   const modal = new ModalBuilder()
     .setCustomId(`announce_schedule_modal`)
