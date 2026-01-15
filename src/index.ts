@@ -51,10 +51,6 @@ async function loadSlashCommands() {
 
       if (command && "data" in command && "execute" in command) {
         client.commands.set(command.data.name, command);
-      } else {
-        console.log(
-          `command @ ${filePath} is missing a required 'data' or 'execute' property.`,
-        );
       }
     }
   }
