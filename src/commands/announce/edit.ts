@@ -101,6 +101,8 @@ export async function editSentAnnounce(
     });
     return;
   }
+
+  // TODO: handle multiple embeds (embed picker?)
   if (message.embeds.length != 1) {
     interaction.reply({
       content: "Embed is missing or cannot be edited.",

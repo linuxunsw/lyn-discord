@@ -9,6 +9,7 @@ import { db } from "../../db/db";
 import { scheduledAnnounces } from "../../db/schema";
 import { eq } from "drizzle-orm";
 
+/* gets a scheduled announcement and displays preview */
 export async function previewAnnounce(
   interaction: ChatInputCommandInteraction,
 ) {

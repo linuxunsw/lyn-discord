@@ -4,6 +4,7 @@ import { scheduledAnnounces } from "../../db/schema";
 import { BotClient } from "../../types/client";
 import { APIEmbed } from "discord.js";
 
+/* checks for any announcements which are available to send */
 export async function checkAnnounce(client: BotClient) {
   const toSend = await db
     .select()
