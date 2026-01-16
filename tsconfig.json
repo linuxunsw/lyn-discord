@@ -1,7 +1,15 @@
 {
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
     "jsx": "react-jsx",
     "jsxImportSource": "@kitajs/html",
-    "plugins": [{ "name": "@kitajs/ts-html-plugin" }],
+    "plugins": [{ "name": "@kitajs/ts-html-plugin" }]
   },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }
