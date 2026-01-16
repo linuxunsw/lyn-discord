@@ -10,6 +10,8 @@ import { previewAnnounce } from "./preview";
 import { validate } from "uuid";
 import { editScheduledAnnounce, editSentAnnounce } from "./edit";
 import { cancelScheduledAnnounce } from "./cancel";
+import { isWhitelisted } from "../../util/permissions";
+import { societyName, unauthorisedMessage } from "../../config";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -84,7 +86,22 @@ module.exports = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    // TODO: permissions check
+    if (!interaction.inCachedGuild()) {
+      await interaction.reply({
+        content: `This feature is only available inside of the ${societyName} server.`,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    if (!isWhitelisted(interaction.member)) {
+      await interaction.reply({
+        content: unauthorisedMessage,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
     const subcommand = interaction.options.getSubcommand();
     if (!subcommand) {
       await interaction.reply({

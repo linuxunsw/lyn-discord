@@ -1,7 +1,5 @@
 import {
   ActionRowBuilder,
-  blockQuote,
-  bold,
   ButtonBuilder,
   ButtonStyle,
   channelMention,
@@ -13,6 +11,14 @@ import {
   SlashCommandBuilder,
   TextChannel,
 } from "discord.js";
+import {
+  accentColour,
+  societyName,
+  unauthorisedMessage,
+  verifyMenuContent,
+  verifyMenuTitle,
+} from "../../config";
+import { isWhitelisted } from "../../util/permissions";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,7 +32,22 @@ module.exports = {
         .setRequired(true),
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    // TODO: permissions check
+    if (!interaction.inCachedGuild()) {
+      await interaction.reply({
+        content: `This feature is only available inside of the ${societyName} server.`,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    if (!isWhitelisted(interaction.member)) {
+      await interaction.reply({
+        content: unauthorisedMessage,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
     const channel = interaction.options.getChannel("channel");
     if (!channel || channel.type !== ChannelType.GuildText) {
       await interaction.reply({
@@ -62,20 +83,9 @@ async function sendVerifyMenu(
 
 function buildVerifyMenuEmbed() {
   const embed = new EmbedBuilder()
-    .setTitle("Verification")
-    .setDescription(
-      `❁ ➔ ${bold("Please verify yourself")}
-      ${blockQuote(
-        `In order to gain access to the server, please verify yourself using your zID through email.\n
-        • Press ${inlineCode("Get Code")} and enter your zID
-        • Check your email for a code ${bold("(make sure to check spam!)")}
-        • Press ${inlineCode("Enter Code")} button and enter the code from the email
-        • Congratulations, you’re verified!
-
-        If you have any feedback or issues regarding the verification process, please [visit this form](https://docs.google.com/forms/d/e/1FAIpQLScvqcvp1ymFoq1VRAS2yIVUr_MNRB9WP9wzIwDQz63S8pEmwQ/viewform?usp=sf_link)`,
-      )}`,
-    )
-    .setColor(0xfbc630);
+    .setTitle(verifyMenuTitle)
+    .setDescription(verifyMenuContent)
+    .setColor(accentColour);
 
   const actionRow = buildVerifyActionRow();
   return { embeds: [embed], components: [actionRow] };
