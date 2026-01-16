@@ -1,8 +1,8 @@
 import { blockQuote, bold, inlineCode } from "discord.js";
 
 /* whitelists for announcement & verify setup commands */
-export const whitelistedUsers = [];
-export const whitelistedRoles = ["1461686833963470850", "1116354653999865876"];
+export const whitelistedUsers: string[] = [];
+export const whitelistedRoles: string[] = ["1461686833963470850", "1116354653999865876"];
 export const unauthorisedMessage =
   "You are not authorised to use this command.";
 
