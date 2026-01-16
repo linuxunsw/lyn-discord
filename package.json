@@ -9,7 +9,9 @@
   "scripts": {
     "start": "npx tsx src/index.ts",
     "deploy-cmd": "npx tsx src/deploy-commands.ts",
-    "test": "xss-scan"
+    "test": "xss-scan",
+    "mongo-migrate": "npx tsx src/mongo-migrate.ts",
+    "db-setup": "mkdir -p data/ && touch data/lyn.db && npx drizzle-kit migrate"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -32,7 +34,9 @@
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "keyv": "^5.5.5",
+    "mongodb": "^7.0.0",
     "nodemailer": "^7.0.12",
+    "rate-limiter-flexible": "^9.0.1",
     "uuid": "^13.0.0"
   }
 }

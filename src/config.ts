@@ -10,6 +10,7 @@ export const accentColour = 0xfbc630;
 export const societyName = `Linux Society`;
 
 /* verification menus */
+export const verifiedRole = "1461704419136507978";
 export const verifyMenuTitle = "Verification";
 export const verifyMenuContent = `❁ ➔ ${bold("Please verify yourself")}
 ${blockQuote(
