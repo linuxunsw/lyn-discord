@@ -1,0 +1,20 @@
+name: Tsc
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  tsc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: tsc
+        uses: EPMatt/reviewdog-action-tsc@63d923a3c5b4497671940b8874f58a404e2351b5 # v1.11.0
+        with:
+          fail_level: any
+          filter_mode: nofilter
+          reporter: github-check
