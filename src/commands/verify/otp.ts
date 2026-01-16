@@ -1,4 +1,3 @@
-// TODO: ratelimiting
 import Keyv from "keyv";
 import { OTPResult, StoredOTP } from "../../types/verify";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";

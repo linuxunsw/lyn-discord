@@ -7,6 +7,7 @@ import {
   ModalSubmitInteraction,
   TextInputStyle,
 } from "discord.js";
+import { consumeRateLimit } from "./rateLimit";
 import { createOrReplaceOTP, generateOTP, validateAndConsumeOTP } from "./otp";
 import { UserData, OTPError, OTPResult } from "../../types/verify";
 import Keyv from "keyv";
@@ -16,15 +17,35 @@ import { db } from "../../db/db";
 import {
   getCodeDMContent,
   getCodeDMTitle,
+  verifiedRole,
   WelcomeDMContent,
   WelcomeDMTitle,
   zIDEmail,
 } from "../../config";
+import { isValidZID } from "../../util/validation";
+import { isVerified } from "../../util/permissions";
+import { client } from "../..";
 
 /* 15min ttl on temp data */
 const DATA_TTL = 30 * 60 * 1000;
 /* stores user data while waiting for verification */
 const tempUserStore = new Keyv<UserData>({ ttl: DATA_TTL });
+
+/**
+ * checks if user is already verified and replies if so
+ */
+async function alreadyVerifiedReply(
+  interaction: ButtonInteraction,
+): Promise<boolean> {
+  if (await isVerified(interaction.user.id)) {
+    await interaction.reply({
+      content: "You are already verified!",
+      flags: MessageFlags.Ephemeral,
+    });
+    return true;
+  }
+  return false;
+}
 
 /**
  * Handles displaying the `Get Code` modal upon receiving the appropriate
@@ -33,6 +54,7 @@ const tempUserStore = new Keyv<UserData>({ ttl: DATA_TTL });
 export async function handleVerifyGetCodeInteraction(
   interaction: ButtonInteraction,
 ) {
+  if (await alreadyVerifiedReply(interaction)) return;
   const modal = buildVerifyGetCodeModal();
   await interaction.showModal(modal);
   return;
@@ -45,6 +67,7 @@ export async function handleVerifyGetCodeInteraction(
 export async function handleVerifyEnterCodeInteraction(
   interaction: ButtonInteraction,
 ) {
+  if (await alreadyVerifiedReply(interaction)) return;
   const modal = buildVerifyEnterCodeModal();
   await interaction.showModal(modal);
   return;
@@ -57,26 +80,58 @@ export async function handleVerifyEnterCodeInteraction(
 export async function handleVerifySendCode(
   interaction: ModalSubmitInteraction,
 ) {
-  const userData = await saveVerifySendUserInfo(interaction);
+  const snowflake = interaction.user.id;
+
+  /* check and consume rate limit */
+  if (await consumeRateLimit(snowflake)) {
+    await OTPInteractionErrorReply(interaction, "ratelimit_exceeded");
+    return;
+  }
+
+  let userData: UserData;
+  try {
+    const saveResult = await saveVerifySendUserInfo(interaction);
+    if (saveResult.success === false) {
+      await OTPInteractionErrorReply(interaction, saveResult.error);
+      return;
+    }
+    userData = saveResult.data;
+  } catch (e) {
+    const error = e as Error;
+    if (error.message === "INVALID_ZID") {
+      await interaction.reply({
+        content: "Please enter a valid zID.",
+        flags: MessageFlags.Ephemeral,
+      });
+    } else {
+      await interaction.reply({
+        content: "There was an error when requesting an OTP. Please try again.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    return;
+  }
 
   /* create OTP */
   const otp = generateOTP();
   const result = await createOrReplaceOTP(userData.snowflake, otp);
   if (result.success === false) {
     await OTPInteractionErrorReply(interaction, result.error);
+    return;
   }
 
   /* send mail */
   try {
-    sendOTPMail(otp, userData.zID);
+    await sendOTPMail(otp, userData.zID);
   } catch (e) {
     console.log(e);
     await OTPInteractionErrorReply(interaction, "internal_error");
+    return;
   }
 
   /* send dm to user saying email sent & next steps */
   await emailSentDM(interaction, zIDEmail(userData.zID));
-  interaction.reply({
+  await interaction.reply({
     content: "Check your mail!",
     flags: MessageFlags.Ephemeral,
   });
@@ -88,16 +143,24 @@ export async function handleVerifySendCode(
  */
 async function saveVerifySendUserInfo(
   interaction: ModalSubmitInteraction,
-): Promise<UserData> {
-  const zID = interaction.fields.getTextInputValue("verify_getCode_modal_zID");
-  const name = interaction.fields.getTextInputValue(
-    "verify_getCode_modal_name",
-  );
-  const distro = interaction.fields.getTextInputValue(
-    "verify_getCode_modal_distro",
-  );
+): Promise<OTPResult<UserData>> {
+  const zID = interaction.fields
+    .getTextInputValue("verify_getCode_modal_zID")
+    .trim()
+    .toLowerCase();
+  const name = interaction.fields
+    .getTextInputValue("verify_getCode_modal_name")
+    .trim();
+  const distro = interaction.fields
+    .getTextInputValue("verify_getCode_modal_distro")
+    .trim();
   const snowflake = interaction.user.id;
   const discordUser = interaction.user.username;
+
+  // TODO: verify zID is valid
+  if (!isValidZID(zID)) {
+    throw new Error("INVALID_ZID");
+  }
 
   // save modal data
   const modalData: UserData = {
@@ -107,11 +170,12 @@ async function saveVerifySendUserInfo(
     zID,
     distro,
   };
-  await tempUserStore.set(snowflake, modalData);
-  // TODO: handle error in setting user
-  // TODO: verify zID is valid
+  const result = await tempUserStore.set(snowflake, modalData);
+  if (!result) {
+    return { success: false, error: "internal_error" };
+  }
 
-  return modalData;
+  return { success: true, data: modalData };
 }
 
 async function emailSentDM(interaction: ModalSubmitInteraction, email: string) {
@@ -174,9 +238,19 @@ export async function handleVerifySubmitCode(
     return;
   }
 
-  // TODO: apply roles
-  // dm user
+  try {
+    await applyVerifiedRole(interaction);
+  } catch {
+    await OTPInteractionErrorReply(interaction, "internal_error");
+    return;
+  }
+
+  /* dm user welcome message */
   await WelcomeDM(interaction);
+  await interaction.reply({
+    content: "Verification successful!",
+    flags: MessageFlags.Ephemeral,
+  });
   return;
 }
 
@@ -192,10 +266,15 @@ async function registerUser(snowflake: string): Promise<OTPResult<void>> {
     zID: userData.zID,
     name: userData.name,
     distro: userData.distro,
+    verifiedAt: Math.floor(Date.now() / 1000),
   };
 
-  await db.insert(users).values(user);
-  return { success: true };
+  try {
+    await db.insert(users).values(user);
+    return { success: true };
+  } catch {
+    return { success: false, error: "internal_error" };
+  }
 }
 
 function buildVerifyGetCodeModal(): ModalBuilder {
@@ -294,4 +373,12 @@ function OTPErrToString(error: OTPError): string {
   }
 
   return fullReason;
+}
+
+/* applies the verification role to the user */
+async function applyVerifiedRole(interaction: ModalSubmitInteraction) {
+  const guild = await client.guilds.fetch(process.env.GUILD_ID);
+  const role = await guild.roles.fetch(verifiedRole);
+  const user = await guild.members.fetch(interaction.user.id);
+  await user.roles.add(role);
 }
