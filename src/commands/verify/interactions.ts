@@ -95,6 +95,10 @@ export async function handleVerifySendCode(
       await OTPInteractionErrorReply(interaction, saveResult.error);
       return;
     }
+    if (!saveResult.data) {
+      await OTPInteractionErrorReply(interaction, "internal_error");
+      return;
+    }
     userData = saveResult.data;
   } catch (e) {
     const error = e as Error;
@@ -377,8 +381,14 @@ function OTPErrToString(error: OTPError): string {
 
 /* applies the verification role to the user */
 async function applyVerifiedRole(interaction: ModalSubmitInteraction) {
+  if (!process.env.GUILD_ID) {
+    throw new Error("GUILD_ID environment variable is not set");
+  }
   const guild = await client.guilds.fetch(process.env.GUILD_ID);
   const role = await guild.roles.fetch(verifiedRole);
+  if (!role) {
+    throw new Error("Verified role not found");
+  }
   const user = await guild.members.fetch(interaction.user.id);
   await user.roles.add(role);
 }
