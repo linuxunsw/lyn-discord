@@ -1,8 +1,4 @@
-import {
-  EmbedBuilder,
-  inlineCode,
-  TextInputBuilder,
-} from "@discordjs/builders";
+import { EmbedBuilder, TextInputBuilder } from "@discordjs/builders";
 import {
   ButtonInteraction,
   LabelBuilder,
@@ -14,9 +10,16 @@ import {
 import { createOrReplaceOTP, generateOTP, validateAndConsumeOTP } from "./otp";
 import { UserData, OTPError, OTPResult } from "../../types/verify";
 import Keyv from "keyv";
-import { sendOTPMail, zIDToEmail } from "./mail";
+import { sendOTPMail } from "./mail";
 import { users } from "../../db/schema";
 import { db } from "../../db/db";
+import {
+  getCodeDMContent,
+  getCodeDMTitle,
+  WelcomeDMContent,
+  WelcomeDMTitle,
+  zIDEmail,
+} from "../../config";
 
 /* 15min ttl on temp data */
 const DATA_TTL = 30 * 60 * 1000;
@@ -72,7 +75,7 @@ export async function handleVerifySendCode(
   }
 
   /* send dm to user saying email sent & next steps */
-  await emailSentDM(interaction, zIDToEmail(userData.zID));
+  await emailSentDM(interaction, zIDEmail(userData.zID));
   interaction.reply({
     content: "Check your mail!",
     flags: MessageFlags.Ephemeral,
@@ -122,18 +125,9 @@ async function emailSentDM(interaction: ModalSubmitInteraction, email: string) {
  * Builds the content of the email sent DM, received after submitting the `verify_getCode` modal
  */
 function buildEmailSentDMContent(email: string): EmbedBuilder {
-  const DMContent = `
-        \u200b\n❁ ➔ **We've sent you some mail**\n
-        > Please check your email and enter the code you've received back into the prompt given by the second button in order to verify yourself as ${inlineCode(email)}\n\u200b
-        ⚜ ➔ **Notes**
-        >>> The mail will most likely appear in your spam/junk mail.
-        If you are forwarding to a Gmail account, it will most likely appear in the main inbox on the forwarded account.
-        Requesting a new code will invalidate your previously requested code.
-      `;
-
   return new EmbedBuilder()
-    .setTitle("You've got mail!")
-    .setDescription(DMContent)
+    .setTitle(getCodeDMTitle)
+    .setDescription(getCodeDMContent(email))
     .setColor(0xfbc630);
 }
 
@@ -148,13 +142,9 @@ async function WelcomeDM(interaction: ModalSubmitInteraction) {
  * Builds the content of the welcome DM, received after successfully submitting the `verify_enterCode` modal
  */
 function buildWelcomeDMContent(): EmbedBuilder {
-  const DMContent = `
-      > Welcome to the server!, Please follow the rules :>
-      `;
-
   return new EmbedBuilder()
-    .setTitle("Verification successful")
-    .setDescription(DMContent)
+    .setTitle(WelcomeDMTitle)
+    .setDescription(WelcomeDMContent)
     .setColor(0xfbc630);
 }
 

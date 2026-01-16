@@ -1,0 +1,40 @@
+import { blockQuote, bold, inlineCode } from "discord.js";
+
+/* whitelists for announcement & verify setup commands */
+export const whitelistedUsers = [];
+export const whitelistedRoles = ["1461686833963470850", "1116354653999865876"];
+export const unauthorisedMessage =
+  "You are not authorised to use this command.";
+
+export const accentColour = 0xfbc630;
+export const societyName = `Linux Society`;
+
+/* verification menus */
+export const verifyMenuTitle = "Verification";
+export const verifyMenuContent = `❁ ➔ ${bold("Please verify yourself")}
+${blockQuote(
+  `In order to gain access to the server, please verify yourself using your zID through email.\n
+  • Press ${inlineCode("Get Code")} and enter your zID
+  • Check your email for a code ${bold("(make sure to check spam!)")}
+  • Press ${inlineCode("Enter Code")} button and enter the code from the email
+  • Congratulations, you’re verified!
+
+  If you have any feedback or issues regarding the verification process, please [visit this form](https://docs.google.com/forms/d/e/1FAIpQLScvqcvp1ymFoq1VRAS2yIVUr_MNRB9WP9wzIwDQz63S8pEmwQ/viewform?usp=sf_link)`,
+)}`;
+
+export const getCodeReplyContent = `Please check your DMs for more information!`;
+export const getCodeDMTitle = `You've got mail!`;
+export const getCodeDMContent = (
+  email: string,
+) => `\u200b\n❁ ➔ **We've sent you some mail**\n
+> Please check your email and enter the code you've received back into the prompt given by the second button in order to verify yourself as ${inlineCode(email)}\n\u200b
+⚜ ➔ **Notes**
+>>> The mail will most likely appear in your spam/junk mail.
+If you are forwarding to a Gmail account, it will most likely appear in the main inbox on the forwarded account.
+Requesting a new code will invalidate your previously requested code.`;
+
+export const WelcomeDMTitle = `Verification successful`;
+export const WelcomeDMContent = `Welcome to the server, please follow the rules :>`;
+
+export const verifyMailSubject = `${societyName} Discord Verification`;
+export const zIDEmail = (zID: string) => `${zID}@unsw.edu.au`;
