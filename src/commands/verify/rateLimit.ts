@@ -1,12 +1,12 @@
 import { RateLimiterMemory } from "rate-limiter-flexible";
 
-/* 1 email per minute: aws ses limit */
+/* 1 email per minute */
 const emailLimiter = new RateLimiterMemory({
   points: 1,
   duration: 60,
 });
 
-/* limit total requests */
+/* 3 emails max in 15 minutes */
 const sendLimiter = new RateLimiterMemory({
   points: 3,
   duration: 15 * 60,
