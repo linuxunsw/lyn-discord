@@ -14,7 +14,7 @@ import {
   handleVerifySubmitCode,
 } from "../commands/verify/interactions";
 
-module.exports = {
+export default {
   name: Events.InteractionCreate,
   async execute(interaction: BaseInteraction) {
     const client = interaction.client as BotClient;

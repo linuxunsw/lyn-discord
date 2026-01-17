@@ -13,7 +13,7 @@ import { cancelScheduledAnnounce } from "./cancel";
 import { isWhitelisted } from "../../util/permissions";
 import { societyName, unauthorisedMessage } from "../../config";
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName("announce")
     .setDescription("Sends a new announcement to the given channel.")

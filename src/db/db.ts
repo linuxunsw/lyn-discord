@@ -1,2 +1,5 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
-export const db = drizzle("file:../../data/lyn.db");
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
+
+const client = createClient({ url: process.env.DB_FILE_NAME! });
+export const db = drizzle({ client });
