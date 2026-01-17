@@ -1,15 +1,12 @@
-import "dotenv/config";
-import fs from "node:fs";
-import path from "node:path";
 import { BotClient } from "./types/client";
 import { GatewayIntentBits } from "discord.js";
-import { fileURLToPath } from "node:url";
 import { checkAnnounce } from "./commands/announce/schedule";
+import { Glob } from "bun";
 
 const ONE_MIN = 60000;
 
 export const client = new BotClient({ intents: [GatewayIntentBits.Guilds] });
-const dirname = path.dirname(fileURLToPath(import.meta.url));
+const dirname = import.meta.dir;
 
 (async () => {
   try {
@@ -35,35 +32,24 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 })();
 
 async function loadSlashCommands() {
-  const foldersPath = path.join(dirname, "./commands");
-  const commandFolders = fs.readdirSync(foldersPath);
+  const glob = new Glob("commands/**/*.{ts,js}");
 
-  for (const folder of commandFolders) {
-    const commandsPath = path.join(foldersPath, folder);
-    const commandFiles = fs
-      .readdirSync(commandsPath)
-      .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
+  for await (const file of glob.scan(dirname)) {
+    const filePath = `${dirname}/${file}`;
+    const commandModule = await import(filePath);
+    const command = commandModule.default;
 
-    for (const file of commandFiles) {
-      const filePath = path.join(commandsPath, file);
-      const commandModule = await import(filePath);
-      const command = commandModule.default;
-
-      if (command && "data" in command && "execute" in command) {
-        client.commands.set(command.data.name, command);
-      }
+    if (command && "data" in command && "execute" in command) {
+      client.commands.set(command.data.name, command);
     }
   }
 }
 
 async function loadEvents() {
-  const eventsPath = path.join(dirname, "./events");
-  const eventFiles = fs
-    .readdirSync(eventsPath)
-    .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));
+  const glob = new Glob("events/*.{ts,js}");
 
-  for (const file of eventFiles) {
-    const filePath = path.join(eventsPath, file);
+  for await (const file of glob.scan(dirname)) {
+    const filePath = `${dirname}/${file}`;
     const eventModule = await import(filePath);
     const event = eventModule.default;
 

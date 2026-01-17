@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
 
 console.log(process.env.DB_FILE_NAME);

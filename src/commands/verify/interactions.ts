@@ -1,10 +1,11 @@
-import { EmbedBuilder, TextInputBuilder } from "@discordjs/builders";
+import { EmbedBuilder } from "@discordjs/builders";
 import {
   ButtonInteraction,
   LabelBuilder,
   MessageFlags,
   ModalBuilder,
   ModalSubmitInteraction,
+  TextInputBuilder,
   TextInputStyle,
 } from "discord.js";
 import { consumeRateLimit } from "./rateLimit";
@@ -37,7 +38,7 @@ const tempUserStore = new Keyv<UserData>({ ttl: DATA_TTL });
 async function alreadyVerifiedReply(
   interaction: ButtonInteraction,
 ): Promise<boolean> {
-  if (await isVerified(interaction.user.id)) {
+  if (isVerified(interaction.user.id)) {
     await interaction.reply({
       content: "You are already verified!",
       flags: MessageFlags.Ephemeral,
@@ -128,8 +129,12 @@ export async function handleVerifySendCode(
   try {
     await sendOTPMail(otp, userData.zID);
   } catch (e) {
-    console.log(e);
-    await OTPInteractionErrorReply(interaction, "internal_error");
+    console.error("Failed to send OTP mail:", e);
+    try {
+      await OTPInteractionErrorReply(interaction, "internal_error");
+    } catch (replyErr) {
+      console.error("Failed to send error reply:", replyErr);
+    }
     return;
   }
 

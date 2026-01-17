@@ -2,7 +2,10 @@ import { blockQuote, bold, inlineCode } from "discord.js";
 
 /* whitelists for announcement & verify setup commands */
 export const whitelistedUsers: string[] = [];
-export const whitelistedRoles: string[] = ["1461686833963470850", "1116354653999865876"];
+export const whitelistedRoles: string[] = [
+  "1461686833963470850",
+  "1116354653999865876",
+];
 export const unauthorisedMessage =
   "You are not authorised to use this command.";
 
@@ -22,13 +25,14 @@ ${blockQuote(
 
   If you have any feedback or issues regarding the verification process, please [visit this form](https://docs.google.com/forms/d/e/1FAIpQLScvqcvp1ymFoq1VRAS2yIVUr_MNRB9WP9wzIwDQz63S8pEmwQ/viewform?usp=sf_link)`,
 )}`;
+export const verifyEmail = `"${societyName}" <${process.env.VERIFY_EMAIL as string}>`;
 
 export const getCodeReplyContent = `Please check your DMs for more information!`;
 export const getCodeDMTitle = `You've got mail!`;
 export const getCodeDMContent = (
   email: string,
-) => `\u200b\n❁ ➔ **We've sent you some mail**\n
-> Please check your email and enter the code you've received back into the prompt given by the second button in order to verify yourself as ${inlineCode(email)}\n\u200b
+) => `❁ ➔ **We've sent you some mail**\n
+> Please check your email and enter the code in the ${inlineCode("Enter Code")} form in order to verify yourself as ${inlineCode(email)}\n
 ⚜ ➔ **Notes**
 >>> The mail will most likely appear in your spam/junk mail.
 If you are forwarding to a Gmail account, it will most likely appear in the main inbox on the forwarded account.

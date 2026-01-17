@@ -20,7 +20,7 @@ import {
 } from "../../config";
 import { isWhitelisted } from "../../util/permissions";
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName("verify")
     .setDescription("Sets up the verification menu in a given channel.")

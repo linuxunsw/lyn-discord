@@ -5,12 +5,12 @@ Discord verification bot based on email verification
 - copy `.env.example`
 ### Set up database
 ```sh
-npm i
-npm run db-setup
+bun i
+bun db-setup
 # optionally, if running a previous version of the bot, migrate mongodb:
-npm run mongo-migrate
+bun mongo-migrate
 ```
 ### Deploy slash commands
 ```sh
-npm run deploy-command
+bun deploy-command
 ```
