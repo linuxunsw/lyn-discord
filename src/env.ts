@@ -46,9 +46,7 @@ export const env = {
 
   EMAIL_DOMAIN: required("EMAIL_DOMAIN"),
   VERIFY_EMAIL: required("VERIFY_EMAIL"),
-  AWS_REGION: required("AWS_REGION"),
-  AWS_ACCESS_KEY_ID: required("AWS_ACCESS_KEY_ID"),
-  AWS_SECRET_ACCESS_KEY: required("AWS_SECRET_ACCESS_KEY"),
+  RESEND_KEY: required("RESEND_KEY"),
 
   DB_FILE_NAME: required("DB_FILE_NAME"),
   OTP_SECRET: required("OTP_SECRET"),
