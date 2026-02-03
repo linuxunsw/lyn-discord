@@ -2,6 +2,9 @@ import Keyv from "keyv";
 import { OTPResult, StoredOTP } from "../../types/verify";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { env } from "../../env";
+import { getLogger } from "../../log";
+
+const log = getLogger("otp");
 
 /* 10min ttl */
 const TTL = 600000;
@@ -24,11 +27,16 @@ export async function createOrReplaceOTP(
     createdAt: Math.floor(Date.now() / 1000),
   };
 
-  const result = await OTPStore.set(snowflake, entry);
-  if (!result) {
+  try {
+    const result = await OTPStore.set(snowflake, entry);
+    if (!result) {
+      return { success: false, error: "internal_error" };
+    } else {
+      return { success: true };
+    }
+  } catch (e) {
+    log.error({ e }, "Error when setting OTP.");
     return { success: false, error: "internal_error" };
-  } else {
-    return { success: true };
   }
 }
 
@@ -38,11 +46,16 @@ export async function createOrReplaceOTP(
 export async function activeOTP(
   snowflake: string,
 ): Promise<OTPResult<StoredOTP>> {
-  const entry = await OTPStore.get(snowflake);
-  if (!entry) {
-    return { success: false, error: "not_found_expired" };
-  } else {
-    return { success: true, data: entry };
+  try {
+    const entry = await OTPStore.get(snowflake);
+    if (!entry) {
+      return { success: false, error: "not_found_expired" };
+    } else {
+      return { success: true, data: entry };
+    }
+  } catch (e) {
+    log.error({ e }, "Error getting stored OTP.")
+    return { success: false, error: "internal_error" };
   }
 }
 
@@ -53,46 +66,56 @@ export async function validateAndConsumeOTP(
   snowflake: string,
   code: string,
 ): Promise<OTPResult<void>> {
-  const entry = await OTPStore.get(snowflake);
-  if (!entry) {
-    return { success: false, error: "not_found_expired" };
-  }
-
-  const equal = compareOTP(code, entry.OTP);
-  /* increment attempt counter (& delete entry if req) */
-  if (!equal) {
-    entry.attempts++;
-    if (entry.attempts >= MAX_ATTEMPTS) {
-      const deleteResult = await OTPStore.delete(snowflake);
-      if (!deleteResult) {
-        return { success: false, error: "internal_error" };
-      } else {
-        return { success: false, error: "attempts_exceeded" };
-      }
+  try {
+    const entry = await OTPStore.get(snowflake);
+    if (!entry) {
+      return { success: false, error: "not_found_expired" };
     }
 
-    await OTPStore.set(snowflake, entry);
-    return { success: false, error: "mismatch" };
-  }
+    const equal = compareOTP(code, entry.OTP);
+    /* increment attempt counter (& delete entry if req) */
+    if (!equal) {
+      entry.attempts++;
+      if (entry.attempts >= MAX_ATTEMPTS) {
+        const deleteResult = await OTPStore.delete(snowflake);
+        if (!deleteResult) {
+          return { success: false, error: "internal_error" };
+        } else {
+          return { success: false, error: "attempts_exceeded" };
+        }
+      }
 
-  const deleteResult = await OTPStore.delete(snowflake);
-  if (!deleteResult) {
+      await OTPStore.set(snowflake, entry);
+      return { success: false, error: "mismatch" };
+    }
+
+    const deleteResult = await OTPStore.delete(snowflake);
+    if (!deleteResult) {
+      return { success: false, error: "internal_error" };
+    }
+
+    return { success: true };
+  } catch (e) {
+    log.error({ e }, "Error getting/setting user data by snowflake");
     return { success: false, error: "internal_error" };
   }
-
-  return { success: true };
 }
 
 /* Consumes an OTP code owned by a zID unconditionally */
 export async function consumeIfOTPExists(
   zID: string,
 ): Promise<OTPResult<void>> {
-  const result = await OTPStore.delete(zID);
-  if (!result) {
-    return { success: false, error: "not_found_expired" };
-  }
+  try {
+    const result = await OTPStore.delete(zID);
+    if (!result) {
+      return { success: false, error: "not_found_expired" };
+    }
 
-  return { success: true };
+    return { success: true };
+  } catch (e) {
+    log.error({ e }, "Error consuming OTP.");
+    return { success: false, error: "internal_error" };
+  }
 }
 
 export function generateOTP(): string {

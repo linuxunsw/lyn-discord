@@ -18,6 +18,9 @@ import {
 } from "../../config";
 import { isWhitelisted } from "../../util/permissions";
 import { env } from "../../env";
+import { getLogger } from "../../log";
+
+const log = getLogger("verify");
 
 export default {
   data: new SlashCommandBuilder()
@@ -31,32 +34,41 @@ export default {
         .setRequired(true),
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    if (!interaction.inCachedGuild()) {
+    try {
+      if (!interaction.inCachedGuild()) {
+        await interaction.reply({
+          content: `This feature is only available inside of the ${env.SOCIETY_NAME} server.`,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
+      if (!isWhitelisted(interaction.member)) {
+        await interaction.reply({
+          content: unauthorisedMessage,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
+      const channel = interaction.options.getChannel("channel");
+      if (!channel || channel.type !== ChannelType.GuildText) {
+        await interaction.reply({
+          content: "Please enter a valid text channel.",
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+
+      await sendVerifyMenu(channel as TextChannel, interaction);
+    } catch (e) {
       await interaction.reply({
-        content: `This feature is only available inside of the ${env.SOCIETY_NAME} server.`,
+        content: `Internal error when sending verification menu.`,
         flags: MessageFlags.Ephemeral,
       });
+      log.error({ e }, "Error sending verification menu.");
       return;
     }
-
-    if (!isWhitelisted(interaction.member)) {
-      await interaction.reply({
-        content: unauthorisedMessage,
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    const channel = interaction.options.getChannel("channel");
-    if (!channel || channel.type !== ChannelType.GuildText) {
-      await interaction.reply({
-        content: "Please enter a valid text channel.",
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    await sendVerifyMenu(channel as TextChannel, interaction);
   },
 };
 
