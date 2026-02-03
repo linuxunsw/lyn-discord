@@ -1,16 +1,12 @@
 import Keyv from "keyv";
 import { OTPResult, StoredOTP } from "../../types/verify";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import { env } from "../../env";
 
 /* 10min ttl */
 const TTL = 600000;
-const OTP_SECRET = process.env.OTP_SECRET;
 const MAX_ATTEMPTS = 3;
 const OTP_LENGTH = 6;
-
-if (!OTP_SECRET) {
-  throw new Error("Unset OTP_SECRET");
-}
 
 export const OTPStore = new Keyv<StoredOTP>({ ttl: TTL });
 
@@ -105,7 +101,7 @@ export function generateOTP(): string {
 }
 
 function hashOTP(code: string): string {
-  return createHmac("sha256", OTP_SECRET as string)
+  return createHmac("sha256", env.OTP_SECRET)
     .update(code)
     .digest("hex");
 }

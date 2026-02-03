@@ -8,6 +8,7 @@ import {
 import { db } from "../../db/db";
 import { scheduledAnnounces } from "../../db/schema";
 import { channelMention, EmbedBuilder } from "@discordjs/builders";
+import { env } from "../../env";
 
 export async function listAnnounce(interaction: ChatInputCommandInteraction) {
   const list = await db.select().from(scheduledAnnounces);
@@ -21,7 +22,7 @@ export async function listAnnounce(interaction: ChatInputCommandInteraction) {
   const listEmbed = new EmbedBuilder()
     .setTitle("📅 Currently scheduled announcements")
     .setDescription(text)
-    .setColor(0xfbc630);
+    .setColor(env.ACCENT_COLOUR);
 
   await interaction.reply({
     embeds: [listEmbed],

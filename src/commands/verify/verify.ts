@@ -12,13 +12,12 @@ import {
   TextChannel,
 } from "discord.js";
 import {
-  accentColour,
-  societyName,
   unauthorisedMessage,
   verifyMenuContent,
   verifyMenuTitle,
 } from "../../config";
 import { isWhitelisted } from "../../util/permissions";
+import { env } from "../../env";
 
 export default {
   data: new SlashCommandBuilder()
@@ -34,7 +33,7 @@ export default {
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: `This feature is only available inside of the ${societyName} server.`,
+        content: `This feature is only available inside of the ${env.SOCIETY_NAME} server.`,
         flags: MessageFlags.Ephemeral,
       });
       return;
@@ -85,7 +84,7 @@ function buildVerifyMenuEmbed() {
   const embed = new EmbedBuilder()
     .setTitle(verifyMenuTitle)
     .setDescription(verifyMenuContent)
-    .setColor(accentColour);
+    .setColor(env.ACCENT_COLOUR);
 
   const actionRow = buildVerifyActionRow();
   return { embeds: [embed], components: [actionRow] };

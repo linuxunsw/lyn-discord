@@ -11,7 +11,8 @@ import { validate } from "uuid";
 import { editScheduledAnnounce, editSentAnnounce } from "./edit";
 import { cancelScheduledAnnounce } from "./cancel";
 import { isWhitelisted } from "../../util/permissions";
-import { societyName, unauthorisedMessage } from "../../config";
+import { unauthorisedMessage } from "../../config";
+import { env } from "../../env";
 
 export default {
   data: new SlashCommandBuilder()
@@ -88,7 +89,7 @@ export default {
   async execute(interaction: ChatInputCommandInteraction) {
     if (!interaction.inCachedGuild()) {
       await interaction.reply({
-        content: `This feature is only available inside of the ${societyName} server.`,
+        content: `This feature is only available inside of the ${env.SOCIETY_NAME} server.`,
         flags: MessageFlags.Ephemeral,
       });
       return;

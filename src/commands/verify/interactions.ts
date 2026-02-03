@@ -15,6 +15,9 @@ import Keyv from "keyv";
 import { sendOTPMail } from "./mail";
 import { users } from "../../db/schema";
 import { db } from "../../db/db";
+import { getLogger } from "../../log";
+
+const log = getLogger("verify");
 import {
   getCodeDMContent,
   getCodeDMTitle,
@@ -129,12 +132,8 @@ export async function handleVerifySendCode(
   try {
     await sendOTPMail(otp, userData.zID);
   } catch (e) {
-    console.error("Failed to send OTP mail:", e);
-    try {
-      await OTPInteractionErrorReply(interaction, "internal_error");
-    } catch (replyErr) {
-      console.error("Failed to send error reply:", replyErr);
-    }
+    log.error(e, "Failed to send OTP mail");
+    await OTPInteractionErrorReply(interaction, "internal_error");
     return;
   }
 
