@@ -1,14 +1,13 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 import { users } from "./db/schema";
 import { db } from "./db/db";
-const uri = process.env.MONGODB_URI;
+import { env } from "./env";
+import { getLogger } from "./log";
 
-if (!uri) {
-  throw new Error("MONGODB_URI environment variable is not set");
-}
+const log = getLogger("mongo-migrate");
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, {
+const client = new MongoClient(env.MONGODB_URI, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
@@ -41,16 +40,17 @@ async function run() {
         await db.insert(users).values(user);
         userCount++;
       } catch {
-        console.log(
-          `Duplicate zID! zID: ${entry.data.zid}, discord username: ${entry.data.discord_name}, full name: ${entry.data.extra_data.person_name}`,
+        log.warn(
+          { zID: entry.data.zid, discordUser: entry.data.discord_name, fullName: entry.data.extra_data.person_name },
+          "Duplicate zID found",
         );
       }
     }
 
-    console.log(`Migrated ${userCount} users.`);
+    log.info({ userCount }, "Migration complete");
   } finally {
     // Ensures that the client will close when you finish/error
     await client.close();
   }
 }
-run().catch(console.dir);
+run().catch((err) => log.error(err, "Migration failed"));

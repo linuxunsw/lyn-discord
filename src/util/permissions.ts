@@ -1,8 +1,11 @@
 import { GuildMember } from "discord.js";
-import { whitelistedRoles, whitelistedUsers } from "../config";
 import { db } from "../db/db";
 import { users } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { env } from "../env";
+
+const whitelistedRoles = env.WHITELISTED_ROLES;
+const whitelistedUsers = env.WHITELISTED_USERS;
 
 /**
  * check if a user's id is whitelisted or if it has a whitelisted role

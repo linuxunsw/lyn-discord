@@ -15,6 +15,7 @@ import Keyv from "keyv";
 import { sendOTPMail } from "./mail";
 import { users } from "../../db/schema";
 import { db } from "../../db/db";
+import { getLogger } from "../../log";
 import {
   getCodeDMContent,
   getCodeDMTitle,
@@ -26,6 +27,10 @@ import {
 import { isValidZID } from "../../util/validation";
 import { isVerified } from "../../util/permissions";
 import { client } from "../..";
+import { env } from "../../env";
+
+const log = getLogger("verify");
+
 
 /* 15min ttl on temp data */
 const DATA_TTL = 30 * 60 * 1000;
@@ -82,10 +87,12 @@ export async function handleVerifySendCode(
   interaction: ModalSubmitInteraction,
 ) {
   const snowflake = interaction.user.id;
+  const username = interaction.user.globalName;
 
   /* check and consume rate limit */
   if (await consumeRateLimit(snowflake)) {
     await OTPInteractionErrorReply(interaction, "ratelimit_exceeded");
+    log.info(`${username} has exceeded rate limits.`);
     return;
   }
 
@@ -94,10 +101,12 @@ export async function handleVerifySendCode(
     const saveResult = await saveVerifySendUserInfo(interaction);
     if (saveResult.success === false) {
       await OTPInteractionErrorReply(interaction, saveResult.error);
+      log.error({ saveResult }, "Error saving user verification information")
       return;
     }
     if (!saveResult.data) {
       await OTPInteractionErrorReply(interaction, "internal_error");
+      log.error({ saveResult }, "Error saving user verification information")
       return;
     }
     userData = saveResult.data;
@@ -121,6 +130,7 @@ export async function handleVerifySendCode(
   const otp = generateOTP();
   const result = await createOrReplaceOTP(userData.snowflake, otp);
   if (result.success === false) {
+    log.error({ result }, "Error saving user OTP")
     await OTPInteractionErrorReply(interaction, result.error);
     return;
   }
@@ -129,21 +139,22 @@ export async function handleVerifySendCode(
   try {
     await sendOTPMail(otp, userData.zID);
   } catch (e) {
-    console.error("Failed to send OTP mail:", e);
-    try {
-      await OTPInteractionErrorReply(interaction, "internal_error");
-    } catch (replyErr) {
-      console.error("Failed to send error reply:", replyErr);
-    }
+    log.error(e, "Failed to send OTP mail");
+    await OTPInteractionErrorReply(interaction, "internal_error");
     return;
   }
 
   /* send dm to user saying email sent & next steps */
-  await emailSentDM(interaction, zIDEmail(userData.zID));
-  await interaction.reply({
-    content: "Check your mail!",
-    flags: MessageFlags.Ephemeral,
-  });
+  try {
+    await emailSentDM(interaction, zIDEmail(userData.zID));
+    await interaction.reply({
+      content: "Check your mail!",
+      flags: MessageFlags.Ephemeral,
+    });
+  } catch (e) {
+    log.error({ e }, "Failed to send DM to user.");
+    await OTPInteractionErrorReply(interaction, "internal_error");
+  }
 }
 
 /**
@@ -166,7 +177,6 @@ async function saveVerifySendUserInfo(
   const snowflake = interaction.user.id;
   const discordUser = interaction.user.username;
 
-  // TODO: verify zID is valid
   if (!isValidZID(zID)) {
     throw new Error("INVALID_ZID");
   }
@@ -201,7 +211,7 @@ function buildEmailSentDMContent(email: string): EmbedBuilder {
   return new EmbedBuilder()
     .setTitle(getCodeDMTitle)
     .setDescription(getCodeDMContent(email))
-    .setColor(0xfbc630);
+    .setColor(env.ACCENT_COLOUR);
 }
 
 async function WelcomeDM(interaction: ModalSubmitInteraction) {
@@ -218,7 +228,7 @@ function buildWelcomeDMContent(): EmbedBuilder {
   return new EmbedBuilder()
     .setTitle(WelcomeDMTitle)
     .setDescription(WelcomeDMContent)
-    .setColor(0xfbc630);
+    .setColor(env.ACCENT_COLOUR);
 }
 
 /**
@@ -249,7 +259,8 @@ export async function handleVerifySubmitCode(
 
   try {
     await applyVerifiedRole(interaction);
-  } catch {
+  } catch (e) {
+    log.error({ e }, "Failed to apply verified role to user.")
     await OTPInteractionErrorReply(interaction, "internal_error");
     return;
   }

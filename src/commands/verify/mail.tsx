@@ -1,40 +1,29 @@
-import { createTransport } from "nodemailer";
 import { OTPEmail } from "./templates/otp";
 import { verifyEmail, verifyMailSubject, zIDEmail } from "../../config";
-import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import { env } from "../../env";
+import { Resend } from "resend";
+import { getLogger } from "../../log";
 
-const region = process.env.AWS_REGION;
-const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-if (!region || !accessKeyId || !secretAccessKey) {
-  throw new Error("Missing AWS environment variables");
-}
+const resend = new Resend(env.RESEND_KEY);
+const log = getLogger("mail")
 
-const sesClient = new SESv2Client({
-  region,
-  credentials: {
-    accessKeyId,
-    secretAccessKey,
-  },
-});
-const transporter = createTransport({
-  SES: { sesClient, SendEmailCommand },
-});
 
 export async function sendOTPMail(otp: string, zID: string) {
   const emailContent = (<OTPEmail code={otp} expiryMinutes={10} />) as string;
-
-  transporter.sendMail(
-    {
+  try {
+    const { data, error } = await resend.emails.send({
       from: verifyEmail,
-      to: zIDEmail(zID),
+      to: [zIDEmail(zID)],
       subject: verifyMailSubject,
-      html: emailContent,
-    },
-    (err) => {
-      if (err) throw err;
-    },
-  );
+      html: emailContent
+    });
 
-  return;
+    if (error) {
+      log.error({ error }, "Error when sending mail")
+    }
+
+    log.debug(data);
+  } catch (e) {
+    log.error({ e }, "Error when sending mail");
+  }
 }

@@ -7,6 +7,9 @@ import {
   ModalSubmitInteraction,
 } from "discord.js";
 import { BotClient } from "../types/client";
+import { getLogger } from "../log";
+
+const log = getLogger("interaction");
 import {
   handleVerifyEnterCodeInteraction,
   handleVerifyGetCodeInteraction,
@@ -99,7 +102,7 @@ async function sendFailedMessage(
     | ModalSubmitInteraction,
   error: unknown,
 ) {
-  console.error(error);
+  log.error(error, "Interaction failed");
 
   if (interaction.replied || interaction.deferred) {
     await interaction.followUp({

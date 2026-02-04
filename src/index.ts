@@ -2,21 +2,24 @@ import { BotClient } from "./types/client";
 import { GatewayIntentBits } from "discord.js";
 import { checkAnnounce } from "./commands/announce/schedule";
 import { Glob } from "bun";
+import { getLogger } from "./log";
+import { env } from "./env";
 
 const ONE_MIN = 60000;
 
 export const client = new BotClient({ intents: [GatewayIntentBits.Guilds] });
 const dirname = import.meta.dir;
+const log = getLogger("startup");
 
 (async () => {
   try {
     await loadSlashCommands();
     await loadEvents();
-    await client.login(process.env.DISCORD_TOKEN);
+    await client.login(env.DISCORD_TOKEN);
     /* check if any announcements can be sent immediately */
     await checkAnnounce(client);
   } catch (e) {
-    console.error(`Could not load events & slash commands. ${e}`);
+    log.error(e, "Could not load events & slash commands");
   }
 
   /* check whether to send announcements every min */
@@ -24,9 +27,7 @@ const dirname = import.meta.dir;
     try {
       await checkAnnounce(client);
     } catch (e) {
-      console.error(
-        `Failed to check for and send scheduled announcements. ${e}`,
-      );
+      log.error(e, "Failed to check for and send scheduled announcements");
     }
   }, ONE_MIN);
 })();
@@ -41,6 +42,7 @@ async function loadSlashCommands() {
 
     if (command && "data" in command && "execute" in command) {
       client.commands.set(command.data.name, command);
+      log.debug({ filePath }, "Loaded command");
     }
   }
 }

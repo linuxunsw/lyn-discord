@@ -1,16 +1,10 @@
 import { blockQuote, bold, inlineCode } from "discord.js";
+import { env } from "./env";
 
-/* whitelists for announcement & verify setup commands */
-export const whitelistedUsers: string[] = [];
-export const whitelistedRoles: string[] = [
-  "1461686833963470850",
-  "1116354653999865876",
-];
+
 export const unauthorisedMessage =
   "You are not authorised to use this command.";
 
-export const accentColour = 0xfbc630;
-export const societyName = `Linux Society`;
 
 /* verification menus */
 export const verifiedRole = "1461704419136507978";
@@ -25,7 +19,7 @@ ${blockQuote(
 
   If you have any feedback or issues regarding the verification process, please [visit this form](https://docs.google.com/forms/d/e/1FAIpQLScvqcvp1ymFoq1VRAS2yIVUr_MNRB9WP9wzIwDQz63S8pEmwQ/viewform?usp=sf_link)`,
 )}`;
-export const verifyEmail = `"${societyName}" <${process.env.VERIFY_EMAIL as string}>`;
+export const verifyEmail = `"${env.SOCIETY_NAME}" <${env.VERIFY_EMAIL}>`;
 
 export const getCodeReplyContent = `Please check your DMs for more information!`;
 export const getCodeDMTitle = `You've got mail!`;
@@ -41,5 +35,5 @@ Requesting a new code will invalidate your previously requested code.`;
 export const WelcomeDMTitle = `Verification successful`;
 export const WelcomeDMContent = `Welcome to the server, please follow the rules :>`;
 
-export const verifyMailSubject = `${societyName} Discord Verification`;
+export const verifyMailSubject = `${env.SOCIETY_NAME} Discord Verification`;
 export const zIDEmail = (zID: string) => `${zID}@unsw.edu.au`;

@@ -25,6 +25,7 @@ import {
 } from "discord.js";
 import { scheduledAnnounces } from "../../db/schema";
 import { db } from "../../db/db";
+import { env } from "../../env";
 
 export async function newAnnounce(interaction: ChatInputCommandInteraction) {
   /* channel provided cannot be a DM channel, voice channel, etc., check for safety */
@@ -149,7 +150,7 @@ export function buildAnnounceEmbed(
   const announceEmbed = new EmbedBuilder()
     .setTitle(title)
     .setDescription(description)
-    .setColor(0xfbc630);
+    .setColor(env.ACCENT_COLOUR);
 
   if (file) announceEmbed.setImage(file.url);
   return announceEmbed;
