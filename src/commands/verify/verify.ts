@@ -11,14 +11,10 @@ import {
   SlashCommandBuilder,
   TextChannel,
 } from "discord.js";
-import {
-  unauthorisedMessage,
-  verifyMenuContent,
-  verifyMenuTitle,
-} from "../../config";
-import { isWhitelisted } from "../../util/permissions";
-import { env } from "../../env";
-import { getLogger } from "../../log";
+import {unauthorisedMessage, verifyMenuContent, verifyMenuTitle,} from "../../config";
+import {isWhitelisted} from "../../util/permissions";
+import {env} from "../../env";
+import {getLogger} from "../../log";
 
 const log = getLogger("verify");
 
@@ -103,15 +99,14 @@ function buildVerifyMenuEmbed() {
 }
 
 function buildVerifyActionRow(): ActionRowBuilder<ButtonBuilder> {
-  const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId("verify_getCode")
-      .setLabel("Get Code")
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId("verify_enterCode")
-      .setLabel("Enter Code")
-      .setStyle(ButtonStyle.Secondary),
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+          .setCustomId("verify_getCode")
+          .setLabel("Get Code")
+          .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+          .setCustomId("verify_enterCode")
+          .setLabel("Enter Code")
+          .setStyle(ButtonStyle.Secondary),
   );
-  return actionRow;
 }
