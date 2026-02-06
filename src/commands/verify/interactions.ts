@@ -99,7 +99,7 @@ export async function handleVerifySendCode(
   let userData: UserData;
   try {
     const saveResult = await saveVerifySendUserInfo(interaction);
-    if (saveResult.success === false) {
+    if (!saveResult.success) {
       await OTPInteractionErrorReply(interaction, saveResult.error);
       log.error({ saveResult }, "Error saving user verification information")
       return;
@@ -129,7 +129,7 @@ export async function handleVerifySendCode(
   /* create OTP */
   const otp = generateOTP();
   const result = await createOrReplaceOTP(userData.snowflake, otp);
-  if (result.success === false) {
+  if (!result.success) {
     log.error({ result }, "Error saving user OTP")
     await OTPInteractionErrorReply(interaction, result.error);
     return;
@@ -199,7 +199,7 @@ async function saveVerifySendUserInfo(
 
 async function emailSentDM(interaction: ModalSubmitInteraction, email: string) {
   const DMChannel = await interaction.user.createDM();
-  DMChannel.send({
+  await DMChannel.send({
     embeds: [buildEmailSentDMContent(email)],
   });
 }
@@ -216,7 +216,7 @@ function buildEmailSentDMContent(email: string): EmbedBuilder {
 
 async function WelcomeDM(interaction: ModalSubmitInteraction) {
   const DMChannel = await interaction.user.createDM();
-  DMChannel.send({
+  await DMChannel.send({
     embeds: [buildWelcomeDMContent()],
   });
 }
@@ -246,13 +246,13 @@ export async function handleVerifySubmitCode(
 
   /* verify against otpstore */
   const validateResult = await validateAndConsumeOTP(snowflake, code);
-  if (validateResult.success === false) {
+  if (!validateResult.success) {
     await OTPInteractionErrorReply(interaction, validateResult.error);
     return;
   }
 
   const registerResult = await registerUser(snowflake);
-  if (registerResult.success == false) {
+  if (!registerResult.success) {
     await OTPInteractionErrorReply(interaction, registerResult.error);
     return;
   }

@@ -16,5 +16,3 @@ CREATE TABLE `users` (
 	`distro` text,
 	`verifiedAt` integer NOT NULL
 );
---> statement-breakpoint
-CREATE UNIQUE INDEX `users_zID_unique` ON `users` (`zID`);

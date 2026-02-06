@@ -47,7 +47,7 @@ async function handleChatInputCommand(
     await command.execute(interaction);
     return;
   } catch (error) {
-    sendFailedMessage(interaction, error);
+    await sendFailedMessage(interaction, error);
   }
 }
 
@@ -59,11 +59,11 @@ async function handleButton(interaction: ButtonInteraction) {
     switch (interaction.customId) {
       /* verification */
       case "verify_getCode": {
-        handleVerifyGetCodeInteraction(interaction);
+        await handleVerifyGetCodeInteraction(interaction);
         break;
       }
       case "verify_enterCode": {
-        handleVerifyEnterCodeInteraction(interaction);
+        await handleVerifyEnterCodeInteraction(interaction);
         break;
       }
     }
@@ -79,11 +79,11 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction) {
   try {
     switch (interaction.customId) {
       case "verify_getCode_modal": {
-        handleVerifySendCode(interaction);
+        await handleVerifySendCode(interaction);
         break;
       }
       case "verify_enterCode_modal": {
-        handleVerifySubmitCode(interaction);
+        await handleVerifySubmitCode(interaction);
         break;
       }
     }

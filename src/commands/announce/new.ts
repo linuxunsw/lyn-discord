@@ -317,5 +317,5 @@ async function createScheduledAnnounce(
     createdAt: Math.floor(Date.now() / 1000),
   };
 
-  return await db.insert(scheduledAnnounces).values(announce).returning();
+  return db.insert(scheduledAnnounces).values(announce).returning();
 }

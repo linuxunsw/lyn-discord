@@ -84,7 +84,7 @@ export async function editSentAnnounce(
 ) {
   const channel = await client.channels.fetch(channelId);
   if (!channel || !channel.isTextBased()) {
-    interaction.reply({
+    await interaction.reply({
       content: "Please provide a valid channel.",
       flags: MessageFlags.Ephemeral,
     });
@@ -94,7 +94,7 @@ export async function editSentAnnounce(
   /* get message and confirm embeds are present */
   const message = await channel.messages.fetch(messageId);
   if (!message || !message.editable) {
-    interaction.reply({
+    await interaction.reply({
       content:
         "Please provide the correct channel and a valid, editable message id.",
       flags: MessageFlags.Ephemeral,
@@ -104,7 +104,7 @@ export async function editSentAnnounce(
 
   // TODO: handle multiple embeds (embed picker?)
   if (message.embeds.length != 1) {
-    interaction.reply({
+    await interaction.reply({
       content: "Embed is missing or cannot be edited.",
       flags: MessageFlags.Ephemeral,
     });
