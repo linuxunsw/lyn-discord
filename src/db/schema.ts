@@ -16,7 +16,7 @@ export const scheduledAnnounces = sqliteTable("scheduled_announces", {
 export const users = sqliteTable("users", {
   snowflake: text().primaryKey(),
   discordUser: text().notNull(),
-  zID: text().notNull().unique(),
+  zID: text().notNull(),
   name: text().notNull(),
   distro: text(),
   verifiedAt: integer().notNull(),
