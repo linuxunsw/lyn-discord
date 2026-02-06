@@ -1,6 +1,7 @@
 import { REST, Routes } from "discord.js";
 import { Glob } from "bun";
 import { getLogger } from "./log";
+import { env } from "./env";
 
 const log = getLogger("deploy");
 const dirname = import.meta.dir;
@@ -33,13 +34,17 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN as string);
     log.info({ count: commands.length }, "Started refreshing application commands");
 
     // The put method is used to fully refresh all commands in the guild with the current set
-    await rest.put(
-      Routes.applicationGuildCommands(
-        process.env.CLIENT_ID as string,
-        process.env.GUILD_ID as string,
-      ),
-      { body: commands },
-    );
+    if (Bun.env["NODE_ENV"] === "development") {
+      await rest.put(
+          Routes.applicationGuildCommands(
+              process.env.CLIENT_ID as string,
+              process.env.GUILD_ID as string,
+          ),
+          { body: commands },
+      );
+    } else {
+      await rest.put(Routes.applicationCommands(env.CLIENT_ID), { body: commands });
+    }
 
     log.info("Successfully reloaded application commands");
   } catch (error) {
