@@ -1,6 +1,6 @@
 services:
   lyn:
-    build: .
+    image: linuxunsw/lyn-discord:latest
     restart: unless-stopped
     env_file:
       - .env
