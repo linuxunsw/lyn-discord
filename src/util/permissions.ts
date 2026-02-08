@@ -20,8 +20,8 @@ export function isWhitelisted(user: GuildMember): boolean {
 /**
  * check if a user is already verified by snowflake
  */
-export function isVerified(snowflake: string): boolean {
-  const existingUser = db
+export async function isVerified(snowflake: string): Promise<boolean> {
+  const existingUser = await db
     .select()
     .from(users)
     .where(eq(users.snowflake, snowflake))

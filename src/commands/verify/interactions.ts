@@ -43,7 +43,7 @@ const tempUserStore = new Keyv<UserData>({ ttl: DATA_TTL });
 async function alreadyVerifiedReply(
   interaction: ButtonInteraction,
 ): Promise<boolean> {
-  if (isVerified(interaction.user.id)) {
+  if (await isVerified(interaction.user.id)) {
     await interaction.reply({
       content: "You are already verified!",
       flags: MessageFlags.Ephemeral,

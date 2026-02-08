@@ -33,7 +33,7 @@ If you are forwarding to a Gmail account, it will most likely appear in the main
 Requesting a new code will invalidate your previously requested code.`;
 
 export const WelcomeDMTitle = `Verification successful`;
-export const WelcomeDMContent = `Welcome to the server, please follow the rules :>`;
+export const WelcomeDMContent = `Welcome to the server, please follow the rules`;
 
 export const verifyMailSubject = `${env.SOCIETY_NAME} Discord Verification`;
 export const zIDEmail = (zID: string) => `${zID}@unsw.edu.au`;
