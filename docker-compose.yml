@@ -1,0 +1,8 @@
+services:
+  lyn:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/lyn/data
