@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "d9d6ba6b-2348-469d-9797-f4df2494a48a",
+  "id": "0467c0b2-bc1d-41de-bb9e-19681ca45e29",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "scheduled_announces": {
@@ -109,15 +109,7 @@
           "autoincrement": false
         }
       },
-      "indexes": {
-        "users_zID_unique": {
-          "name": "users_zID_unique",
-          "columns": [
-            "zID"
-          ],
-          "isUnique": true
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
