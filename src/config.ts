@@ -8,7 +8,7 @@ export const unauthorisedMessage =
 
 /* verification menus */
 export const verifiedRole = "1461704419136507978";
-export const verifyMenuTitle = "Verification";
+export const verifyMenuTitle = "<:tux:1132503295315955752> Verification <:tux:1132503295315955752>";
 export const verifyMenuContent = `❁ ➔ ${bold("Please verify yourself")}
 ${blockQuote(
   `In order to gain access to the server, please verify yourself using your zID through email.\n
@@ -22,7 +22,7 @@ ${blockQuote(
 export const verifyEmail = `"${env.SOCIETY_NAME}" <${env.VERIFY_EMAIL}>`;
 
 export const getCodeReplyContent = `Please check your DMs for more information!`;
-export const getCodeDMTitle = `You've got mail!`;
+export const getCodeDMTitle = `<:tux:1132503295315955752> You've got mail! <:tux:1132503295315955752>`;
 export const getCodeDMContent = (
   email: string,
 ) => `❁ ➔ **We've sent you some mail**\n
@@ -32,7 +32,7 @@ export const getCodeDMContent = (
 If you are forwarding to a Gmail account, it will most likely appear in the main inbox on the forwarded account.
 Requesting a new code will invalidate your previously requested code.`;
 
-export const WelcomeDMTitle = `Verification successful`;
+export const WelcomeDMTitle = `<:tux:1132503295315955752> Verification successful <:tux:1132503295315955752>`;
 export const WelcomeDMContent = `Welcome to the server, please follow the rules`;
 
 export const verifyMailSubject = `${env.SOCIETY_NAME} Discord Verification`;
