@@ -7,7 +7,6 @@ export const unauthorisedMessage =
 
 
 /* verification menus */
-export const verifiedRole = "1461704419136507978";
 export const verifyMenuTitle = "<:tux:1132503295315955752> Verification <:tux:1132503295315955752>";
 export const verifyMenuContent = `❁ ➔ ${bold("Please verify yourself")}
 ${blockQuote(

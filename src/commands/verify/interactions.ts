@@ -19,7 +19,6 @@ import { getLogger } from "../../log";
 import {
   getCodeDMContent,
   getCodeDMTitle,
-  verifiedRole,
   WelcomeDMContent,
   WelcomeDMTitle,
   zIDEmail,
@@ -397,11 +396,8 @@ function OTPErrToString(error: OTPError): string {
 
 /* applies the verification role to the user */
 async function applyVerifiedRole(interaction: ModalSubmitInteraction) {
-  if (!process.env.GUILD_ID) {
-    throw new Error("GUILD_ID environment variable is not set");
-  }
-  const guild = await client.guilds.fetch(process.env.GUILD_ID);
-  const role = await guild.roles.fetch(verifiedRole);
+  const guild = await client.guilds.fetch(env.GUILD_ID);
+  const role = await guild.roles.fetch(env.VERIFIED_ROLE);
   if (!role) {
     throw new Error("Verified role not found");
   }
