@@ -12,7 +12,7 @@ export default {
 
     client.user?.setActivity({
       name: "status",
-      state: `Running ${os.type()}-${os.release()}-${os.arch()}`,
+      state: `Running ${os.type()}-${os.release()}`,
       type: ActivityType.Custom,
     });
   },

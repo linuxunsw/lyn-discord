@@ -250,12 +250,6 @@ export async function handleVerifySubmitCode(
     return;
   }
 
-  const registerResult = await registerUser(snowflake);
-  if (!registerResult.success) {
-    await OTPInteractionErrorReply(interaction, registerResult.error);
-    return;
-  }
-
   try {
     await applyVerifiedRole(interaction);
   } catch (e) {
@@ -264,15 +258,22 @@ export async function handleVerifySubmitCode(
     return;
   }
 
+  const registerResult = await registerUser(snowflake);
+  if (!registerResult.success) {
+    await OTPInteractionErrorReply(interaction, registerResult.error);
+    return;
+  }
+
+
   /* dm user welcome message */
   await WelcomeDM(interaction);
   await interaction.reply({
     content: "Verification successful!",
     flags: MessageFlags.Ephemeral,
   });
-  return;
 }
 
+/* adds a user to the user's db table */
 async function registerUser(snowflake: string): Promise<OTPResult<void>> {
   const userData = await tempUserStore.get(snowflake);
   if (!userData) {
@@ -294,6 +295,18 @@ async function registerUser(snowflake: string): Promise<OTPResult<void>> {
   } catch {
     return { success: false, error: "internal_error" };
   }
+}
+
+/* applies the verification role to the user */
+async function applyVerifiedRole(interaction: ModalSubmitInteraction) {
+  const guild = await client.guilds.fetch(env.GUILD_ID);
+  const role = await guild.roles.fetch(env.VERIFIED_ROLE);
+  if (!role) {
+    throw new Error("Verified role not found in guild");
+  }
+
+  const user = await guild.members.fetch(interaction.user.id);
+  await user.roles.add(role);
 }
 
 function buildVerifyGetCodeModal(): ModalBuilder {
@@ -392,15 +405,4 @@ function OTPErrToString(error: OTPError): string {
   }
 
   return fullReason;
-}
-
-/* applies the verification role to the user */
-async function applyVerifiedRole(interaction: ModalSubmitInteraction) {
-  const guild = await client.guilds.fetch(env.GUILD_ID);
-  const role = await guild.roles.fetch(env.VERIFIED_ROLE);
-  if (!role) {
-    throw new Error("Verified role not found");
-  }
-  const user = await guild.members.fetch(interaction.user.id);
-  await user.roles.add(role);
 }

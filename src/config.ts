@@ -1,10 +1,8 @@
 import { blockQuote, bold, inlineCode } from "discord.js";
 import { env } from "./env";
 
-
 export const unauthorisedMessage =
   "You are not authorised to use this command.";
-
 
 /* verification menus */
 export const verifyMenuTitle = "<:tux:1132503295315955752> Verification <:tux:1132503295315955752>";
