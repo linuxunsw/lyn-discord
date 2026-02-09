@@ -1,0 +1,8 @@
+services:
+  lyn:
+    image: linuxunsw/lyn-discord:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/lyn/data

@@ -19,7 +19,6 @@ import { getLogger } from "../../log";
 import {
   getCodeDMContent,
   getCodeDMTitle,
-  verifiedRole,
   WelcomeDMContent,
   WelcomeDMTitle,
   zIDEmail,
@@ -43,7 +42,7 @@ const tempUserStore = new Keyv<UserData>({ ttl: DATA_TTL });
 async function alreadyVerifiedReply(
   interaction: ButtonInteraction,
 ): Promise<boolean> {
-  if (isVerified(interaction.user.id)) {
+  if (await isVerified(interaction.user.id)) {
     await interaction.reply({
       content: "You are already verified!",
       flags: MessageFlags.Ephemeral,
@@ -251,12 +250,6 @@ export async function handleVerifySubmitCode(
     return;
   }
 
-  const registerResult = await registerUser(snowflake);
-  if (!registerResult.success) {
-    await OTPInteractionErrorReply(interaction, registerResult.error);
-    return;
-  }
-
   try {
     await applyVerifiedRole(interaction);
   } catch (e) {
@@ -265,15 +258,22 @@ export async function handleVerifySubmitCode(
     return;
   }
 
+  const registerResult = await registerUser(snowflake);
+  if (!registerResult.success) {
+    await OTPInteractionErrorReply(interaction, registerResult.error);
+    return;
+  }
+
+
   /* dm user welcome message */
   await WelcomeDM(interaction);
   await interaction.reply({
     content: "Verification successful!",
     flags: MessageFlags.Ephemeral,
   });
-  return;
 }
 
+/* adds a user to the user's db table */
 async function registerUser(snowflake: string): Promise<OTPResult<void>> {
   const userData = await tempUserStore.get(snowflake);
   if (!userData) {
@@ -295,6 +295,18 @@ async function registerUser(snowflake: string): Promise<OTPResult<void>> {
   } catch {
     return { success: false, error: "internal_error" };
   }
+}
+
+/* applies the verification role to the user */
+async function applyVerifiedRole(interaction: ModalSubmitInteraction) {
+  const guild = await client.guilds.fetch(env.GUILD_ID);
+  const role = await guild.roles.fetch(env.VERIFIED_ROLE);
+  if (!role) {
+    throw new Error("Verified role not found in guild");
+  }
+
+  const user = await guild.members.fetch(interaction.user.id);
+  await user.roles.add(role);
 }
 
 function buildVerifyGetCodeModal(): ModalBuilder {
@@ -393,18 +405,4 @@ function OTPErrToString(error: OTPError): string {
   }
 
   return fullReason;
-}
-
-/* applies the verification role to the user */
-async function applyVerifiedRole(interaction: ModalSubmitInteraction) {
-  if (!process.env.GUILD_ID) {
-    throw new Error("GUILD_ID environment variable is not set");
-  }
-  const guild = await client.guilds.fetch(process.env.GUILD_ID);
-  const role = await guild.roles.fetch(verifiedRole);
-  if (!role) {
-    throw new Error("Verified role not found");
-  }
-  const user = await guild.members.fetch(interaction.user.id);
-  await user.roles.add(role);
 }
