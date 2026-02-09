@@ -1,12 +1,11 @@
-FROM oven/bun:latest
+FROM oven/bun:alpine
 
 WORKDIR /lyn
 
-RUN apt-get update && \
-    apt-get install -y python3 build-essential
+RUN apk add --no-cache python3 build-base
 
 COPY package.json bun.lock ./
-RUN bun install
+RUN bun install --production
 COPY . .
 
 CMD ["bun", "run", "start"]
