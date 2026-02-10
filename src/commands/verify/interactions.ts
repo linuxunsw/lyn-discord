@@ -85,12 +85,15 @@ export async function handleVerifyEnterCodeInteraction(
 export async function handleVerifySendCode(
   interaction: ModalSubmitInteraction,
 ) {
+  /* defer to prevent interaction timeout */
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   const snowflake = interaction.user.id;
   const username = interaction.user.globalName;
 
   /* check and consume rate limit */
   if (await consumeRateLimit(snowflake)) {
-    await OTPInteractionErrorReply(interaction, "ratelimit_exceeded");
+    await OTPDeferredErrorReply(interaction, "ratelimit_exceeded");
     log.info(`${username} has exceeded rate limits.`);
     return;
   }
@@ -99,12 +102,12 @@ export async function handleVerifySendCode(
   try {
     const saveResult = await saveVerifySendUserInfo(interaction);
     if (!saveResult.success) {
-      await OTPInteractionErrorReply(interaction, saveResult.error);
+      await OTPDeferredErrorReply(interaction, saveResult.error);
       log.error({ saveResult }, "Error saving user verification information")
       return;
     }
     if (!saveResult.data) {
-      await OTPInteractionErrorReply(interaction, "internal_error");
+      await OTPDeferredErrorReply(interaction, "internal_error");
       log.error({ saveResult }, "Error saving user verification information")
       return;
     }
@@ -112,14 +115,12 @@ export async function handleVerifySendCode(
   } catch (e) {
     const error = e as Error;
     if (error.message === "INVALID_ZID") {
-      await interaction.reply({
+      await interaction.editReply({
         content: "Please enter a valid zID.",
-        flags: MessageFlags.Ephemeral,
       });
     } else {
-      await interaction.reply({
+      await interaction.editReply({
         content: "There was an error when requesting an OTP. Please try again.",
-        flags: MessageFlags.Ephemeral,
       });
     }
     return;
@@ -130,7 +131,7 @@ export async function handleVerifySendCode(
   const result = await createOrReplaceOTP(userData.snowflake, otp);
   if (!result.success) {
     log.error({ result }, "Error saving user OTP")
-    await OTPInteractionErrorReply(interaction, result.error);
+    await OTPDeferredErrorReply(interaction, result.error);
     return;
   }
 
@@ -139,20 +140,19 @@ export async function handleVerifySendCode(
     await sendOTPMail(otp, userData.zID);
   } catch (e) {
     log.error(e, "Failed to send OTP mail");
-    await OTPInteractionErrorReply(interaction, "internal_error");
+    await OTPDeferredErrorReply(interaction, "internal_error");
     return;
   }
 
   /* send dm to user saying email sent & next steps */
   try {
     await emailSentDM(interaction, zIDEmail(userData.zID));
-    await interaction.reply({
+    await interaction.editReply({
       content: "Check your mail!",
-      flags: MessageFlags.Ephemeral,
     });
   } catch (e) {
     log.error({ e }, "Failed to send DM to user.");
-    await OTPInteractionErrorReply(interaction, "internal_error");
+    await OTPDeferredErrorReply(interaction, "internal_error");
   }
 }
 
@@ -237,6 +237,8 @@ function buildWelcomeDMContent(): EmbedBuilder {
 export async function handleVerifySubmitCode(
   interaction: ModalSubmitInteraction,
 ) {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   /* get code from modal */
   const snowflake = interaction.user.id;
   const code = interaction.fields.getTextInputValue(
@@ -246,7 +248,7 @@ export async function handleVerifySubmitCode(
   /* verify against otpstore */
   const validateResult = await validateAndConsumeOTP(snowflake, code);
   if (!validateResult.success) {
-    await OTPInteractionErrorReply(interaction, validateResult.error);
+    await OTPDeferredErrorReply(interaction, validateResult.error);
     return;
   }
 
@@ -254,22 +256,21 @@ export async function handleVerifySubmitCode(
     await applyVerifiedRole(interaction);
   } catch (e) {
     log.error({ e }, "Failed to apply verified role to user.")
-    await OTPInteractionErrorReply(interaction, "internal_error");
+    await OTPDeferredErrorReply(interaction, "internal_error");
     return;
   }
 
   const registerResult = await registerUser(snowflake);
   if (!registerResult.success) {
-    await OTPInteractionErrorReply(interaction, registerResult.error);
+    await OTPDeferredErrorReply(interaction, registerResult.error);
     return;
   }
 
 
   /* dm user welcome message */
   await WelcomeDM(interaction);
-  await interaction.reply({
+  await interaction.editReply({
     content: "Verification successful!",
-    flags: MessageFlags.Ephemeral,
   });
 }
 
@@ -363,13 +364,15 @@ function buildVerifyEnterCodeModal(): ModalBuilder {
   return modal;
 }
 
-async function OTPInteractionErrorReply(
+/**
+ * Error reply for deferred interactions (use editReply instead of reply)
+ */
+async function OTPDeferredErrorReply(
   interaction: ModalSubmitInteraction | ButtonInteraction,
   reason: OTPError,
 ) {
-  await interaction.reply({
+  await interaction.editReply({
     content: OTPErrToString(reason),
-    flags: MessageFlags.Ephemeral,
   });
 }
 
