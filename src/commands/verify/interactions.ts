@@ -30,26 +30,51 @@ import { env } from "../../env";
 
 const log = getLogger("verify");
 
-
 /* 15min ttl on temp data */
 const DATA_TTL = 30 * 60 * 1000;
 /* stores user data while waiting for verification */
 const tempUserStore = new Keyv<UserData>({ ttl: DATA_TTL });
 
 /**
- * checks if user is already verified and replies if so
+ * Replies to an already verified user. If they are verified but missing roles, applies the missing role
+ * and displays an appropriate message.
  */
-async function alreadyVerifiedReply(
-  interaction: ButtonInteraction,
-): Promise<boolean> {
-  if (await isVerified(interaction.user.id)) {
+async function alreadyVerifiedReply(interaction: ButtonInteraction) {
+  /* check user roles, if they are missing the verified role it should be reapplied */
+  const user = interaction.user;
+  const guild = interaction.guild;
+
+  /**
+   * should not occur as the interaction which calls this check cannot be triggered outside a guild,
+   * but handle anyway
+   */
+  if (!guild) {
     await interaction.reply({
-      content: "You are already verified!",
+      content: "You must be in a valid guild!",
       flags: MessageFlags.Ephemeral,
     });
-    return true;
+    log.warn(user, "Attempt to verify with no guild");
+    return;
   }
-  return false;
+
+  const member = await guild.members.fetch(user.id);
+  const roles = member.roles.cache;
+
+  /* user is verified but missing role */
+  if (!roles.has(env.VERIFIED_ROLE)) {
+    await applyVerifiedRole(interaction);
+    log.info(`Reapplied role to previously verified user (${user.globalName})`);
+    await interaction.reply({
+      content: "Reapplied your verifed role.",
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  /* user is verified but already has the role */
+  await interaction.reply({
+    content: "You are already verified!",
+    flags: MessageFlags.Ephemeral,
+  });
 }
 
 /**
@@ -59,7 +84,11 @@ async function alreadyVerifiedReply(
 export async function handleVerifyGetCodeInteraction(
   interaction: ButtonInteraction,
 ) {
-  if (await alreadyVerifiedReply(interaction)) return;
+  if (await isVerified(interaction.user.id)) {
+    await alreadyVerifiedReply(interaction);
+    return;
+  }
+
   const modal = buildVerifyGetCodeModal();
   await interaction.showModal(modal);
   return;
@@ -72,7 +101,11 @@ export async function handleVerifyGetCodeInteraction(
 export async function handleVerifyEnterCodeInteraction(
   interaction: ButtonInteraction,
 ) {
-  if (await alreadyVerifiedReply(interaction)) return;
+  if (await isVerified(interaction.user.id)) {
+    await alreadyVerifiedReply(interaction);
+    return;
+  }
+
   const modal = buildVerifyEnterCodeModal();
   await interaction.showModal(modal);
   return;
@@ -103,12 +136,12 @@ export async function handleVerifySendCode(
     const saveResult = await saveVerifySendUserInfo(interaction);
     if (!saveResult.success) {
       await OTPDeferredErrorReply(interaction, saveResult.error);
-      log.error({ saveResult }, "Error saving user verification information")
+      log.error({ saveResult }, "Error saving user verification information");
       return;
     }
     if (!saveResult.data) {
       await OTPDeferredErrorReply(interaction, "internal_error");
-      log.error({ saveResult }, "Error saving user verification information")
+      log.error({ saveResult }, "Error saving user verification information");
       return;
     }
     userData = saveResult.data;
@@ -130,7 +163,7 @@ export async function handleVerifySendCode(
   const otp = generateOTP();
   const result = await createOrReplaceOTP(userData.snowflake, otp);
   if (!result.success) {
-    log.error({ result }, "Error saving user OTP")
+    log.error({ result }, "Error saving user OTP");
     await OTPDeferredErrorReply(interaction, result.error);
     return;
   }
@@ -255,7 +288,7 @@ export async function handleVerifySubmitCode(
   try {
     await applyVerifiedRole(interaction);
   } catch (e) {
-    log.error({ e }, "Failed to apply verified role to user.")
+    log.error({ e }, "Failed to apply verified role to user.");
     await OTPDeferredErrorReply(interaction, "internal_error");
     return;
   }
@@ -265,7 +298,6 @@ export async function handleVerifySubmitCode(
     await OTPDeferredErrorReply(interaction, registerResult.error);
     return;
   }
-
 
   /* dm user welcome message */
   await WelcomeDM(interaction);
@@ -299,7 +331,9 @@ async function registerUser(snowflake: string): Promise<OTPResult<void>> {
 }
 
 /* applies the verification role to the user */
-async function applyVerifiedRole(interaction: ModalSubmitInteraction) {
+async function applyVerifiedRole(
+  interaction: ModalSubmitInteraction | ButtonInteraction,
+) {
   const guild = await client.guilds.fetch(env.GUILD_ID);
   const role = await guild.roles.fetch(env.VERIFIED_ROLE);
   if (!role) {
