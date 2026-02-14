@@ -21,3 +21,12 @@ export const users = sqliteTable("users", {
   distro: text(),
   verifiedAt: integer().notNull(),
 });
+
+export const tickets = sqliteTable("tickets", {
+  id: integer().primaryKey({ autoIncrement: true }),
+  guildId: text().notNull(),
+  channelId: text().notNull(),
+  userId: text().notNull(),
+  status: text().notNull().default("open"),
+  createdAt: integer().notNull(),
+});
