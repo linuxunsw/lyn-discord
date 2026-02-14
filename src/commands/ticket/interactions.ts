@@ -25,7 +25,6 @@ import { db } from "../../db/db";
 import { eq } from "drizzle-orm";
 import { client } from "../..";
 
-
 const log = getLogger("ticket");
 
 /**
@@ -137,6 +136,7 @@ async function createTicketChannel(
       name: `ticket-${ticketId}-${ticketUser}`.substring(0, 100),
       parent: category,
       permissionOverwrites: [
+        ...category.permissionOverwrites.cache.values(),
         {
           id: userInteraction.user.id,
           allow: [
