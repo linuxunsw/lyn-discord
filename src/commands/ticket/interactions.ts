@@ -1,16 +1,20 @@
 import {
   channelMention,
+  EmbedBuilder,
   LabelBuilder,
   ModalBuilder,
+  roleMention,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
   TextInputBuilder,
+  userMention,
 } from "@discordjs/builders";
 import {
   ButtonInteraction,
   ChannelType,
   MessageFlags,
   ModalSubmitInteraction,
+  PermissionFlagsBits,
   TextChannel,
   TextInputStyle,
 } from "discord.js";
@@ -19,6 +23,8 @@ import { getLogger } from "../../log";
 import { tickets } from "../../db/schema";
 import { db } from "../../db/db";
 import { eq } from "drizzle-orm";
+import { client } from "../..";
+
 
 const log = getLogger("ticket");
 
@@ -88,15 +94,13 @@ export async function newTicket(interaction: ModalSubmitInteraction) {
     return;
   }
 
-  /* dm user saying ticket created, reply to modal submit interaction */
-
-  /* send message to exec */
-
+  /* update user saying ticket created, reply to modal submit interaction */
   await interaction.editReply({
     content: `Ticket created! See ${channelMention(ticketChannel.id)}`,
   });
 
-  return;
+  /* send message to exec */
+  await sendTicketNotification(interaction, ticketChannel.id);
 }
 
 /**
@@ -132,10 +136,21 @@ async function createTicketChannel(
     const ticketChannel = await guild.channels.create({
       name: `ticket-${ticketId}-${ticketUser}`.substring(0, 100),
       parent: category,
+      permissionOverwrites: [
+        {
+          id: userInteraction.user.id,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+          ],
+        },
+      ],
     });
 
     /* add channelId to ticket */
-    await db.update(tickets)
+    await db
+      .update(tickets)
       .set({ channelId: ticketChannel.id })
       .where(eq(tickets.id, ticketId));
 
@@ -162,4 +177,50 @@ export async function createTicketEntry(
     .returning();
 
   return ticket.id;
+}
+
+async function sendTicketNotification(
+  interaction: ModalSubmitInteraction,
+  ticketChannelId: string,
+) {
+  const guild = client.guilds.cache.get(env.GUILD_ID);
+  const notifyChannel = (await guild?.channels.fetch(
+    env.TICKET_NOTIFY_CHANNEL_ID,
+  )) as TextChannel;
+
+  const type = interaction.fields.getStringSelectValues("newTicket_type");
+  const description = interaction.fields.getTextInputValue(
+    "newTicket_description",
+  );
+
+  const ticketNotification = buildTicketNotificationEmbed(
+    description,
+    type[0],
+    ticketChannelId,
+    interaction.user.id,
+  );
+
+  await notifyChannel.send({
+    content: roleMention(env.TICKET_RESPONSE_ROLE),
+    embeds: [ticketNotification],
+  });
+}
+
+function buildTicketNotificationEmbed(
+  description: string,
+  ticketType: string,
+  channelId: string,
+  userId: string,
+) {
+  const embed = new EmbedBuilder()
+    .setTitle("New ticket created")
+    .setDescription(
+      `**User**: ${userMention(userId)}\n
+      **Information provided:\n**${description}\n
+      **Type:** ${ticketType}\n
+      Ticket created in ${channelMention(channelId)}`,
+    )
+    .setColor(env.ACCENT_COLOUR);
+
+  return embed;
 }
