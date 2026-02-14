@@ -36,6 +36,7 @@ export const env = {
   DISCORD_TOKEN: required("DISCORD_TOKEN"),
   CLIENT_ID: required("CLIENT_ID"),
   GUILD_ID: required("GUILD_ID"),
+  TICKET_CATEGORY_ID: required("TICKET_CATEGORY_ID"),
 
   WHITELISTED_USERS: optionalList("WHITELISTED_USERS"),
   WHITELISTED_ROLES: optionalList("WHITELISTED_ROLES"),

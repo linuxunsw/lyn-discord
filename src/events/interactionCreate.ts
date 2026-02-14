@@ -16,6 +16,7 @@ import {
   handleVerifySendCode,
   handleVerifySubmitCode,
 } from "../commands/verify/interactions";
+import { displayTicketModal, newTicket } from "../commands/ticket/interactions";
 
 export default {
   name: Events.InteractionCreate,
@@ -66,6 +67,10 @@ async function handleButton(interaction: ButtonInteraction) {
         await handleVerifyEnterCodeInteraction(interaction);
         break;
       }
+      case "newTicket_init": {
+        await displayTicketModal(interaction);
+        break;
+      }
     }
   } catch (e) {
     await sendFailedMessage(interaction, e);
@@ -84,6 +89,10 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction) {
       }
       case "verify_enterCode_modal": {
         await handleVerifySubmitCode(interaction);
+        break;
+      }
+      case "newTicket_form": {
+        await newTicket(interaction);
         break;
       }
     }

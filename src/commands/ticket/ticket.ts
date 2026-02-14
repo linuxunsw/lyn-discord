@@ -15,7 +15,6 @@ import { isWhitelisted } from "../../util/permissions";
 import { unauthorisedMessage } from "../../config";
 import { getLogger } from "../../log";
 import { env } from "../../env";
-import { channel } from "process";
 
 const log = getLogger("ticket");
 
@@ -68,8 +67,15 @@ export default {
   },
 };
 
-async function sendTicketMenu(channel: TextChannel, interaction: ChatInputCommandInteraction) {
+/**
+ * Sends the ticket creation menu to the given channel.
+ */
+async function sendTicketMenu(
+  channel: TextChannel,
+  interaction: ChatInputCommandInteraction,
+) {
   const messageContent = buildTicketMenu();
+
   try {
     await channel.send(messageContent);
     await interaction.reply({
@@ -82,7 +88,6 @@ async function sendTicketMenu(channel: TextChannel, interaction: ChatInputComman
       flags: MessageFlags.Ephemeral,
     });
   }
-  return;
 }
 
 function buildTicketMenu() {
@@ -93,15 +98,14 @@ function buildTicketMenu() {
 
   const actionRow = buildTicketActionRow();
 
-  return { embed: [embed], components: [actionRow] };
+  return { embeds: [embed], components: [actionRow] };
 }
 
 function buildTicketActionRow(): ActionRowBuilder<ButtonBuilder> {
-    return new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId("newTicket_init")
-        .setLabel("Open Ticket")
-        .setStyle(ButtonStyle.Secondary),
-    );
-  }
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("newTicket_init")
+      .setLabel("Open Ticket")
+      .setStyle(ButtonStyle.Secondary),
+  );
 }
