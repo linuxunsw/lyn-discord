@@ -111,17 +111,13 @@ async function createTicketChannel(
   /* add user access to channel (category should already be configured for execs to see) */
   const guild = userInteraction.guild;
   if (!guild) {
-    log.warn("Attempt to create ticket ");
+    log.warn("Attempt to create ticket with invalid guild");
     await userInteraction.editReply({
       content: `This can only be used inside of ${env.SOCIETY_NAME}`,
     });
     return;
   }
 
-  /* remove invalid ticket characters */
-  const ticketUser = userInteraction.user.username
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
   const ticketId = await createTicketEntry(userInteraction);
   const category = userInteraction.guild.channels.cache.get(
     env.TICKET_CATEGORY_ID,
@@ -133,11 +129,13 @@ async function createTicketChannel(
 
   try {
     const ticketChannel = await guild.channels.create({
-      name: `ticket-${ticketId}-${ticketUser}`.substring(0, 100),
+      name: `ticket-${ticketId}`.substring(0, 100),
       parent: category,
       permissionOverwrites: [
+        /* add parent category's permissions */
         ...category.permissionOverwrites.cache.values(),
         {
+          /* add the user who created the ticket to the channel */
           id: userInteraction.user.id,
           allow: [
             PermissionFlagsBits.ViewChannel,
@@ -163,6 +161,11 @@ async function createTicketChannel(
   }
 }
 
+/**
+ * Creates an entry in the ticket table. The `channelId` needs to be updated later, as the name of the channel
+ * is determined by the id generated when inserting into the table. Returns the id of the entry so that
+ * the channelId can be updated.
+ */
 export async function createTicketEntry(
   userInteraction: ModalSubmitInteraction,
 ): Promise<number> {
@@ -206,6 +209,9 @@ async function sendTicketNotification(
   });
 }
 
+/**
+ * Builds the embed for ticket notifications to executives.
+ */
 function buildTicketNotificationEmbed(
   description: string,
   ticketType: string,
